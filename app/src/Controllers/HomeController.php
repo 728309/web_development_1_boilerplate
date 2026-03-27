@@ -2,12 +2,22 @@
 
 namespace App\Controllers;
 
+use App\Services\MixService;
+
 class HomeController
 {
-    public function home($vars = [])
+    private MixService $mixService;
+
+    public function __construct()
     {
-        // normally we don't want to echo from a controller method directly
-        // but rather load a view template
-        echo "Welcome home!";
+        $this->mixService = new MixService();
+    }
+
+    public function home(array $vars = []): void
+    {
+        $mixes = $this->mixService->getAllPublicMixes();
+        $featuredMixes = array_slice($mixes, 0, 3);
+
+        require __DIR__ . '/../Views/home/index.php';
     }
 }
