@@ -1,39 +1,10 @@
 <?php /** @var MixModel $mix */
 
 use App\Models\MixModel; ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= htmlspecialchars($mix->title) ?> - SK Production Hub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/style.css">
-</head>
-<body>
-<nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-accent" href="/">SK Production Hub</a>
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <a class="btn btn-sm btn-outline-light" href="/">Home</a>
-            <a class="btn btn-sm btn-outline-light" href="/mixes">Mixes</a>
-
-            <?php if (isset($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin'): ?>
-                <a class="btn btn-sm btn-outline-light" href="/admin/create-mix">Create Mix</a>
-            <?php endif; ?>
-
-            <?php if (isset($_SESSION['user'])): ?>
-                <span class="text-secondary small">
-                    <?= htmlspecialchars($_SESSION['user']['username']) ?>
-                </span>
-                <a class="btn btn-sm btn-accent" href="/logout">Logout</a>
-            <?php else: ?>
-                <a class="btn btn-sm btn-outline-light" href="/register">Register</a>
-                <a class="btn btn-sm btn-accent" href="/login">Login</a>
-            <?php endif; ?>
-        </div>
-    </div>
-</nav>
+<?php
+$pageTitle = 'ShowPage';
+require __DIR__ . '/../Partial-View/header.php';
+?>
 
 <header class="py-5 border-bottom border-secondary-subtle">
     <div class="container">
@@ -49,6 +20,36 @@ use App\Models\MixModel; ?>
     </div>
 </header>
 
+<?php if (isset($_SESSION['user']) && ($_SESSION['user']['role'] ?? '') === 'admin'): ?>
+    <form
+            method="POST"
+            action="/admin/mixes/<?= urlencode($mix->slug) ?>/delete"
+            onsubmit="return confirm('Are you sure you want to delete this mix?');"
+            class="mt-3"
+    >
+        <button type="submit" class="btn btn-outline-danger w-100">Delete Mix</button>
+    </form>
+<?php endif; ?>
+
+<?php if (!empty($mix->media_url)): ?>
+        <div class="mt-4">
+            <?php if (str_contains($mix->media_url, 'soundcloud.com')): ?>
+                <iframe
+                        width="100%"
+                        height="166"
+                        scrolling="no"
+                        frameborder="no"
+                        allow="autoplay"
+                        src="https://w.soundcloud.com/player/?url=<?= urlencode($mix->media_url) ?>&color=%23ff7a1a&auto_play=false&hide_related=false&show_comments=false&show_user=true&show_reposts=false&show_teaser=true">
+                </iframe>
+            <?php else: ?>
+                <a class="btn btn-outline-light" href="<?= htmlspecialchars($mix->media_url) ?>" target="_blank">
+                    Listen
+                </a>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
+
 <main class="py-5">
     <div class="container">
         <div class="row g-4">
@@ -56,7 +57,6 @@ use App\Models\MixModel; ?>
                 <div class="detail-box p-4 mb-4">
                     <h2 class="h4 mb-3">Description</h2>
                     <p><?= nl2br(htmlspecialchars($mix->description)) ?></p>
-
                     <h2 class="h4 mt-4 mb-3">Tracklist</h2>
                     <p>
                         <?= $mix->tracklist !== null && $mix->tracklist !== ''
@@ -174,5 +174,4 @@ use App\Models\MixModel; ?>
 
 <script src="/assets/js/vote_system.js"></script>
 
-</body>
-</html>
+<?php require __DIR__ . '/../Partial-View/footer.php'; ?>

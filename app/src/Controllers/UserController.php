@@ -3,6 +3,7 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\ValidationException;
 use App\Services\UserService;
 
 class UserController
@@ -60,9 +61,8 @@ class UserController
             $oldEmail = $email;
             $oldUsername = $username;
 
-            $result = $this->userService->registerUser($email, $username, $password);
-
-            if (($result['success'] ?? false) === true) {
+            try {
+                $this->userService->registerUser($email, $username, $password);
                 $user = $this->userService->getUserByEmail($email);
 
                 if ($user !== null) {
@@ -78,9 +78,9 @@ class UserController
 
                 header('Location: /');
                 exit;
+            } catch (ValidationException $exception) {
+                $errorMessage = $exception->getMessage();
             }
-
-            $errorMessage = $result['message'] ?? 'Registration failed.';
         }
 
         require __DIR__ . '/../Views/login/register.php';

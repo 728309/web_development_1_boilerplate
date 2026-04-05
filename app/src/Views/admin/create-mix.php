@@ -8,26 +8,10 @@ $old = $old ?? [];
 $errorMessage = $errorMessage ?? null;
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Mix - SK Production Hub</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/style.css">
-</head>
-<body>
-<nav class="navbar navbar-expand-lg border-bottom border-secondary-subtle">
-    <div class="container">
-        <a class="navbar-brand fw-bold text-accent" href="/">SK Production Hub</a>
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <a class="btn btn-sm btn-outline-light" href="/">Home</a>
-            <a class="btn btn-sm btn-outline-light" href="/mixes">Mixes</a>
-            <a class="btn btn-sm btn-accent" href="/admin/create-mix">Create Mix</a>
-        </div>
-    </div>
-</nav>
+<?php
+$pageTitle = 'Create-Mix';
+require __DIR__ . '/../Partial-View/header.php';
+?>
 
 <main class="py-5">
     <div class="container">
@@ -152,6 +136,4 @@ $errorMessage = $errorMessage ?? null;
             </div>
         </div>
     </div>
-</main>
-</body>
-</html>
+<?php require __DIR__ . '/../Partial-View/footer.php'; ?>

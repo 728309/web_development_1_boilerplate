@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\ValidationException;
 use App\Models\MixModel;
 use App\Repositories\MixRepository;
 
@@ -35,6 +36,9 @@ class MixService
         return $this->mixRepository->getAllArtists();
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function createMix(array $input, int $createdByUserId): array
     {
         $artistId = (int) ($input['artist_id'] ?? 0);
@@ -47,26 +51,18 @@ class MixService
         $isFeatured = isset($input['is_featured']) && (string) $input['is_featured'] === '1';
 
         if ($artistId <= 0 || $title === '' || $description === '' || $genre === '' || $mediaUrl === '') {
-            return [
-                'success' => false,
-                'message' => 'Artist, title, description, genre, and media URL are required.',
-            ];
+            throw new ValidationException('Artist, title, description, genre, and media URL are required.');
         }
 
         if (!filter_var($mediaUrl, FILTER_VALIDATE_URL)) {
-            return [
-                'success' => false,
-                'message' => 'Please enter a valid media URL.',
-            ];
+            throw new ValidationException('Please enter a valid media URL.');
         }
 
         $duration = null;
+
         if ($durationValue !== '') {
-            if (!ctype_digit($durationValue)) {
-                return [
-                    'success' => false,
-                    'message' => 'Duration must be a whole number in seconds.',
-                ];
+            if (!is_numeric($durationValue) || (int) $durationValue < 0) {
+                throw new ValidationException('Duration must be a positive number.');
             }
 
             $duration = (int) $durationValue;
@@ -109,10 +105,9 @@ class MixService
 
     private function slugify(string $text): string
     {
-        $text = mb_strtolower(trim($text));
-        $text = preg_replace('~[^\pL\d]+~u', '-', $text) ?? '';
-        $text = trim($text, '-');
-        $text = preg_replace('~[^-\w]+~', '', $text) ?? '';
+        $text = strtolower(trim($text));
+        $text = str_replace(' ', '-', $text);
+        $text = str_replace(["'", '"', ",", ".", "!", "?", ":", ";", "/"], '', $text);
 
         return $text !== '' ? $text : 'mix';
     }
@@ -125,22 +120,19 @@ class MixService
         return $this->mixRepository->getCommentsByMixId($mixId);
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function addComment(int $mixId, int $userId, string $content): array
     {
         $content = trim($content);
 
         if ($content === '') {
-            return [
-                'success' => false,
-                'message' => 'Comment cannot be empty.',
-            ];
+            throw new ValidationException('Comment cannot be empty.');
         }
 
         if (mb_strlen($content) > 1000) {
-            return [
-                'success' => false,
-                'message' => 'Comment is too long.',
-            ];
+            throw new ValidationException('Comment is too long.');
         }
 
         $this->mixRepository->createComment($mixId, $userId, $content);
@@ -155,13 +147,13 @@ class MixService
         return $this->mixRepository->getVoteCountsByMixId($mixId);
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function saveVote(int $mixId, int $userId, string $voteType): array
     {
         if ($voteType !== 'like' && $voteType !== 'dislike') {
-            return [
-                'success' => false,
-                'message' => 'Invalid vote type.',
-            ];
+            throw new ValidationException('Invalid vote type.');
         }
 
         $this->mixRepository->saveVote($mixId, $userId, $voteType);
@@ -169,5 +161,27 @@ class MixService
         return [
             'success' => true,
         ];
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    public function deleteMixBySlug($slug): void
+    {
+        $slug = trim($slug);
+
+        if ($slug === '') {
+            throw new ValidationException('Invalid mix.');
+        }
+
+        $mix = $this->mixRepository->getPublicMixBySlug($slug);
+
+        if ($mix === null) {
+            throw new ValidationException('The mix does not exist.');
+        }
+
+        $this->mixRepository->deleteVotesByMixId($mix->mix_id);
+        $this->mixRepository->deleteCommentsByMixId($mix->mix_id);
+        $this->mixRepository->deleteMixById($mix->mix_id);
     }
 }

@@ -12,7 +12,7 @@ class SubmissionRepository
     {
         $this->pdo = new PDO(
             'mysql:host=mysql;dbname=sk_production_hub;charset=utf8mb4',
-            'root',
+            'developer',
             'secret123'
         );
 
@@ -65,6 +65,39 @@ class SubmissionRepository
             ':description' => $description,
             ':genre' => $genre,
             ':media_url' => $mediaUrl,
+        ]);
+    }
+
+    public function getPendingSubmissions(): array
+    {
+        $sql = "
+        SELECT *
+        FROM submissions
+        WHERE status = 'pending'
+        ORDER BY created_at DESC
+    ";
+
+        $statement = $this->pdo->query($sql);
+
+        return $statement->fetchAll();
+    }
+
+    public function updateSubmissionStatus(int $submissionId, string $status, int $reviewedBy): void
+    {
+        $sql = "
+        UPDATE submissions
+        SET status = :status,
+            reviewed_by = :reviewed_by,
+            reviewed_at = NOW(),
+            updated_at = NOW()
+        WHERE submission_id = :submission_id
+    ";
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':status' => $status,
+            ':reviewed_by' => $reviewedBy,
+            ':submission_id' => $submissionId,
         ]);
     }
 }

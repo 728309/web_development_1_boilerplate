@@ -13,7 +13,7 @@ class UserRepository
     {
         $this->pdo = new PDO(
             'mysql:host=mysql;dbname=sk_production_hub;charset=utf8mb4',
-            'root',
+            'developer',
             'secret123'
         );
 

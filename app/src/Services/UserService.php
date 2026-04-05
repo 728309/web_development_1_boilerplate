@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\ValidationException;
 use App\Models\UserModel;
 use App\Repositories\UserRepository;
 
@@ -11,11 +12,13 @@ class UserService
 
     public function __construct()
     {
-        $this->userRepository = new userRepository();
+        $this->userRepository = new UserRepository();
     }
 
     public function attemptLogin(string $email, string $password): ?UserModel
     {
+        $email = trim($email);
+
         $user = $this->userRepository->getUserByEmail($email);
 
         if ($user === null) {
@@ -29,51 +32,36 @@ class UserService
         return $user;
     }
 
+    /**
+     * @throws ValidationException
+     */
     public function registerUser(string $email, string $username, string $password): array
     {
         $email = trim($email);
         $username = trim($username);
 
         if ($email === '' || $username === '' || $password === '') {
-            return [
-                'success' => false,
-                'message' => 'All fields are required.',
-            ];
+            throw new ValidationException('All fields are required.');
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return [
-                'success' => false,
-                'message' => 'Please enter a valid email address.',
-            ];
+            throw new ValidationException('Please enter a valid email address.');
         }
 
         if (mb_strlen($username) < 3) {
-            return [
-                'success' => false,
-                'message' => 'Username must be at least 3 characters long.',
-            ];
+            throw new ValidationException('Username must be at least 3 characters long.');
         }
 
         if (mb_strlen($password) < 8) {
-            return [
-                'success' => false,
-                'message' => 'Password must be at least 8 characters long.',
-            ];
+            throw new ValidationException('Password must be at least 8 characters long.');
         }
 
         if ($this->userRepository->getUserByEmail($email) !== null) {
-            return [
-                'success' => false,
-                'message' => 'This email address is already in use.',
-            ];
+            throw new ValidationException('This email address is already in use.');
         }
 
         if ($this->userRepository->getUserByUsername($username) !== null) {
-            return [
-                'success' => false,
-                'message' => 'This username is already taken.',
-            ];
+            throw new ValidationException('This username is already taken.');
         }
 
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);

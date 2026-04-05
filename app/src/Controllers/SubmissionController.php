@@ -2,9 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\ValidationException;
 use App\Services\SubmissionService;
 
-class SubmissionController
+class SubmissionController extends BaseController
 {
     private SubmissionService $submissionService;
 
@@ -23,32 +24,75 @@ class SubmissionController
     {
         $this->requireLoggedIn();
 
-        $result = $this->submissionService->createSubmission(
-            (int) $_SESSION['user']['user_id'],
-            $_POST['title'] ?? '',
-            $_POST['artist_name'] ?? '',
-            $_POST['description'] ?? '',
-            $_POST['genre'] ?? '',
-            $_POST['media_url'] ?? ''
-        );
+        try {
+            $this->submissionService->createSubmission(
+                (int) $_SESSION['user']['user_id'],
+                $_POST['title'] ?? '',
+                $_POST['artist_name'] ?? '',
+                $_POST['description'] ?? '',
+                $_POST['genre'] ?? '',
+                $_POST['media_url'] ?? ''
+            );
 
-        if (($result['success'] ?? false) !== true) {
-            $_SESSION['submission_error'] = $result['message'] ?? 'Unable to send submission.';
-            header('Location: /submissions/submit.php');
-            exit;
+            $_SESSION['submission_success'] = 'Your mix was submitted for review.';
+        } catch (ValidationException $exception) {
+            $_SESSION['submission_error'] = $exception->getMessage();
         }
 
-        $_SESSION['submission_success'] = 'Your mix was submitted for review.';
-        header('Location: /submissions/create');
+        header('Location: /submissions/submit');
         exit;
     }
 
-    private function requireLoggedIn(): void
+    public function adminIndex(array $vars = []): void
     {
-        if (!isset($_SESSION['user'])) {
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
+        $this->requireAdmin();
+
+        $submissions = $this->submissionService->getPendingSubmissions();
+
+        require __DIR__ . '/../Views/admin/submissions.php';
+    }
+
+    public function approve(array $vars = []): void
+    {
+        $this->requireAdmin();
+
+        $submissionId = (int) ($vars['id'] ?? 0);
+
+        try {
+            $this->submissionService->updateSubmissionStatus(
+                $submissionId,
+                'approved',
+                (int) $_SESSION['user']['user_id']
+            );
+
+            $_SESSION['submission_success'] = 'Submission approved successfully.';
+        } catch (ValidationException $exception) {
+            $_SESSION['submission_error'] = $exception->getMessage();
         }
+
+        header('Location: /admin/submissions');
+        exit;
+    }
+
+    public function reject(array $vars = []): void
+    {
+        $this->requireAdmin();
+
+        $submissionId = (int) ($vars['id'] ?? 0);
+
+        try {
+            $this->submissionService->updateSubmissionStatus(
+                $submissionId,
+                'rejected',
+                (int) $_SESSION['user']['user_id']
+            );
+
+            $_SESSION['submission_success'] = 'Submission rejected successfully.';
+        } catch (ValidationException $exception) {
+            $_SESSION['submission_error'] = $exception->getMessage();
+        }
+
+        header('Location: /admin/submissions');
+        exit;
     }
 }

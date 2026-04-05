@@ -13,7 +13,7 @@ class MixRepository
     {
         $this->pdo = new PDO(
             'mysql:host=mysql;dbname=sk_production_hub;charset=utf8mb4',
-            'root',
+            'developer',
             'secret123'
         );
 
@@ -339,6 +339,39 @@ class MixRepository
             ':mix_id' => $mixId,
             ':user_id' => $userId,
             ':vote_type' => $voteType,
+        ]);
+    }
+
+    public function deleteVotesByMixId(int $mixId): void
+    {
+        $sql = ' DELETE FROM votes
+                 WHERE mix_id = :mix_id';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':mix_id' => $mixId,
+        ]);
+    }
+
+    public function deleteCommentsByMixId(int $mixId): void
+    {
+        $sql = "DELETE FROM comments
+                WHERE mix_id = :mix_id";
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':mix_id' => $mixId,
+        ]);
+    }
+
+    public function deleteMixById(int $mixId): void
+    {
+        $sql = "DELETE FROM mixes 
+                WHERE mix_id = :mix_id";
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':mix_id' => $mixId,
         ]);
     }
 }

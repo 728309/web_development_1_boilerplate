@@ -1,13 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Mix</title>
-    <link rel="stylesheet" href="/assets/css/style.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-black text-light">
+
+<?php
+$pageTitle = 'SubmissionPage';
+require __DIR__ . '/../Partial-View/header.php';
+?>
+
 <div class="container py-5">
     <h1 class="mb-4">Submit a Mix</h1>
 
@@ -54,5 +50,5 @@
         <button type="submit" class="btn btn-light">Submit</button>
     </form>
 </div>
-</body>
-</html>
+
+<?php require __DIR__ . '/../Partial-View/footer.php'; ?>

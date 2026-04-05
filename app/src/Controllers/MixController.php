@@ -2,9 +2,10 @@
 
 namespace App\Controllers;
 
+use App\Exceptions\ValidationException;
 use App\Services\MixService;
 
-class MixController
+class MixController extends BaseController
 {
     private MixService $mixService;
 
@@ -26,7 +27,7 @@ class MixController
         $mix = $this->mixService->getPublicMixBySlug($slug);
 
         if ($mix === null) {
-            $this->renderNotFound('The mix you are looking for does not exist.');
+            $this->renderNotFound('The mix does not exist.');
             return;
         }
 
@@ -48,14 +49,14 @@ class MixController
         }
 
         $content = $_POST['content'] ?? '';
-        $result = $this->mixService->addComment(
-            $mix->mix_id,
-            (int) $_SESSION['user']['user_id'],
-            $content
-        );
-
-        if (($result['success'] ?? false) !== true) {
-            $_SESSION['comment_error'] = $result['message'] ?? 'Unable to post comment.';
+        try {
+            $this->mixService->addComment(
+                $mix->mix_id,
+                (int) $_SESSION['user']['user_id'],
+                $content
+            );
+        } catch (ValidationException $exception) {
+            $_SESSION['comment_error'] = $exception->getMessage();
         }
 
         header('Location: /mixes/' . urlencode($mix->slug));
@@ -80,32 +81,10 @@ class MixController
             'is_featured' => '0',
         ];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $old = [
-                'artist_id' => trim($_POST['artist_id'] ?? ''),
-                'title' => trim($_POST['title'] ?? ''),
-                'description' => trim($_POST['description'] ?? ''),
-                'genre' => trim($_POST['genre'] ?? ''),
-                'tracklist' => trim($_POST['tracklist'] ?? ''),
-                'media_url' => trim($_POST['media_url'] ?? ''),
-                'duration' => trim($_POST['duration'] ?? ''),
-                'is_featured' => isset($_POST['is_featured']) ? '1' : '0',
-            ];
-
-            $result = $this->mixService->createMix($old, (int) $_SESSION['user']['user_id']);
-
-            if (($result['success'] ?? false) === true) {
-                header('Location: /mixes/' . $result['slug']);
-                exit;
-            }
-
-            $errorMessage = $result['message'] ?? 'Unable to create mix.';
-        }
-
         require __DIR__ . '/../Views/admin/create-mix.php';
     }
 
-    public function GetVotes(array $vars = []): void
+    public function getVotes(array $vars = []): void
     {
         header('Content-Type: application/json');
 
@@ -123,7 +102,7 @@ class MixController
         echo json_encode($counts);
     }
 
-    public function StoreVote(array $vars = []): void
+    public function storeVote(array $vars = []): void
     {
         header('Content-Type: application/json');
 
@@ -144,21 +123,15 @@ class MixController
 
         $voteType = $_POST['vote_type'] ?? '';
 
-        if ($voteType !== 'like' && $voteType !== 'dislike') {
+        try {
+            $this->mixService->saveVote(
+                $mix->mix_id,
+                (int) $_SESSION['user']['user_id'],
+                $voteType
+            );
+        } catch (ValidationException $exception) {
             http_response_code(400);
-            echo json_encode(['message' => 'Invalid vote type']);
-            return;
-        }
-
-        $result = $this->mixService->saveVote(
-            $mix->mix_id,
-            (int) $_SESSION['user']['user_id'],
-            $voteType
-        );
-
-        if (($result['success'] ?? false) !== true) {
-            http_response_code(400);
-            echo json_encode(['message' => $result['message'] ?? 'Unable to save vote']);
+            echo json_encode(['message' => $exception->getMessage()]);
             return;
         }
 
@@ -170,28 +143,52 @@ class MixController
         ]);
     }
 
-    private function requireAdmin(): void
+    public function store(array $vars = []): void
     {
-        if (!isset($_SESSION['user']) || ($_SESSION['user']['role'] ?? '') !== 'admin') {
-            http_response_code(403);
-            echo 'Forbidden';
+        $this->requireAdmin();
+
+        $artists = $this->mixService->getAllArtists();
+
+        $old = [
+            'artist_id' => trim($_POST['artist_id'] ?? ''),
+            'title' => trim($_POST['title'] ?? ''),
+            'description' => trim($_POST['description'] ?? ''),
+            'genre' => trim($_POST['genre'] ?? ''),
+            'tracklist' => trim($_POST['tracklist'] ?? ''),
+            'media_url' => trim($_POST['media_url'] ?? ''),
+            'duration' => trim($_POST['duration'] ?? ''),
+            'is_featured' => isset($_POST['is_featured']) ? '1' : '0',
+        ];
+
+        try {
+            $result = $this->mixService->createMix(
+                $old,
+                (int) $_SESSION['user']['user_id']
+            );
+
+            header('Location: /mixes/' . $result['slug']);
             exit;
+        } catch (ValidationException $exception) {
+            $errorMessage = $exception->getMessage();
         }
+
+        require __DIR__ . '/../Views/admin/create-mix.php';
     }
 
-    private function requireLoggedIn(): void
+    public function delete(array $vars = []): void
     {
-        if (!isset($_SESSION['user'])) {
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
-        }
-    }
+        $this->requireAdmin();
 
-    private function renderNotFound(string $message = 'The requested mix could not be found.'): void
-    {
-        http_response_code(404);
-        $title = 'Mix not found';
-        require __DIR__ . '/../Views/errors/page404.php';
+        $slug = $vars['slug'] ?? '';
+
+        try {
+            $this->mixService->deleteMixBySlug($slug);
+            $_SESSION['mix_success'] = 'Mix deleted successfully.';
+        } catch (ValidationException $exception) {
+            $_SESSION['mix_error'] = $exception->getMessage();
+        }
+
+        header('Location: /mixes');
+        exit;
     }
 }

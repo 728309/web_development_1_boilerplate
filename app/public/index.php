@@ -16,12 +16,17 @@ $dispatcher = simpleDispatcher(function (RouteCollector $r) {
     $r->addRoute(['GET', 'POST'], '/login', ['App\Controllers\UserController', 'login']);
     $r->addRoute('GET', '/logout', ['App\Controllers\UserController', 'logout']);
     $r->addRoute(['GET', 'POST'], '/register', ['App\Controllers\UserController', 'register']);
-    $r->addRoute(['GET', 'POST'], '/admin/create-mix', ['App\Controllers\MixController', 'create']);
     $r->addRoute('POST', '/mixes/{slug}/comments', ['App\Controllers\MixController', 'storeComment']);
     $r->addRoute('GET', '/api/mixes/{slug}/votes', ['App\Controllers\MixController', 'GetVotes']);
     $r->addRoute('POST', '/api/mixes/{slug}/votes', ['App\Controllers\MixController', 'StoreVote']);
     $r->addRoute('GET', '/submissions/submit', ['App\Controllers\SubmissionController', 'create']);
     $r->addRoute('POST', '/submissions', ['App\Controllers\SubmissionController', 'store']);
+    $r->addRoute('GET', '/admin/submissions', ['App\Controllers\SubmissionController', 'adminIndex']);
+    $r->addRoute('POST', '/admin/submissions/{id}/approve', ['App\Controllers\SubmissionController', 'approve']);
+    $r->addRoute('POST', '/admin/submissions/{id}/reject', ['App\Controllers\SubmissionController', 'reject']);
+    $r->addRoute('GET', '/admin/create-mix', ['App\Controllers\MixController', 'create']);
+    $r->addRoute('POST', '/admin/create-mix', ['App\Controllers\MixController', 'store']);
+    $r->addRoute('POST', '/admin/mixes/{slug}/delete', ['App\Controllers\MixController', 'delete']);
 });
 
 $httpMethod = $_SERVER['REQUEST_METHOD'];
