@@ -135,4 +135,6 @@ The SQL export of the database is included in the root of this project.
 **Email:** 728309@student.inholland.nl  
 **Student number:** 728309
 
+DESCLAIMER : I made an update on my GITHUB, This is the better version where the admin can approve and it will come on the webpage itself
+
 **Repository link:** https://github.com/728309/web_development_1_boilerplate.git
