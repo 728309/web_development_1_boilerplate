@@ -100,4 +100,29 @@ class SubmissionRepository
             ':submission_id' => $submissionId,
         ]);
     }
+
+
+    public function getSubmissionById(int $submissionId): ?array
+    {
+        $sql = "
+        SELECT *
+        FROM submissions
+        WHERE submission_id = :submission_id
+        LIMIT 1
+    ";
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':submission_id' => $submissionId,
+        ]);
+
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        return $row;
+    }
 }
+

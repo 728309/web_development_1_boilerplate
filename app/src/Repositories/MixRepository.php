@@ -374,4 +374,91 @@ class MixRepository
             ':mix_id' => $mixId,
         ]);
     }
+
+    public function getArtistByStageName(string $stageName): ?array
+    {
+        $sql = '
+        SELECT artist_id, stage_name
+        FROM artists
+        WHERE stage_name = :stage_name
+        LIMIT 1
+    ';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':stage_name' => $stageName,
+        ]);
+
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        return $row;
+    }
+
+    public function createArtist(string $stageName): int
+    {
+        $baseSlug = $this->slugify($stageName);
+        $slug = $baseSlug;
+        $counter = 2;
+
+        while ($this->artistSlugExists($slug)) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        $sql = '
+        INSERT INTO artists (
+            stage_name,
+            slug,
+            bio,
+            image_path,
+            created_at,
+            updated_at
+        ) VALUES (
+            :stage_name,
+            :slug,
+            NULL,
+            NULL,
+            NOW(),
+            NOW()
+        )
+    ';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':stage_name' => $stageName,
+            ':slug' => $slug,
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+
+    private function artistSlugExists(string $slug): bool
+    {
+        $sql = '
+        SELECT COUNT(*)
+        FROM artists
+        WHERE slug = :slug
+    ';
+
+        $statement = $this->pdo->prepare($sql);
+        $statement->execute([
+            ':slug' => $slug,
+        ]);
+
+        return (int) $statement->fetchColumn() > 0;
+    }
+
+    private function slugify(string $text): string
+    {
+        $text = strtolower(trim($text));
+        $text = str_replace(' ', '-', $text);
+        $text = str_replace(["'", '"', ",", ".", "!", "?", ":", ";", "/"], '', $text);
+
+        return $text !== '' ? $text : 'artist';
+    }
 }
